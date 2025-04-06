@@ -1,8 +1,9 @@
-torch
-transformers
-librosa
-deepface
-edge-tts
-pvporcupine
-pyaudio
-sqlite3
+torch                   # For Llama 2 and PyTorch-based models
+transformers            # For Llama 2 integration (Hugging Face Transformers)
+librosa                 # For audio processing (e.g., voice tone analysis)
+deepface                # For facial emotion detection
+edge-tts                # For Text-to-Speech (TTS) synthesis
+pvporcupine             # For hotword detection
+pyaudio                 # For audio input/output (used with Porcupine)
+sqlite3                 # For long-term memory storage (SQLite database)
+whisper                 # For Speech-to-Text (STT) using OpenAI Whisper
