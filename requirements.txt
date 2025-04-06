@@ -1,0 +1,8 @@
+torch
+transformers
+librosa
+deepface
+edge-tts
+pvporcupine
+pyaudio
+sqlite3
