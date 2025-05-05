@@ -3,8 +3,13 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
+model_name = "meta-llama/Llama-2-7b-chat-hf"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+print("Model downloaded successfully!")
+
 class Llama2:
-    def __init__(self, model_path="path_to_llama2_model", max_length=512):
+    def __init__(self, model_path="meta-llama/Llama-2-7b-chat-hf", max_length=512):
         """
         Initialize the Llama 2 model and tokenizer.
         :param model_path: Path to the locally stored Llama 2 model.
