@@ -6,7 +6,51 @@
     "Scream",
     "Crying, sobbing",
     "Groan",
-    "Pain"
+    "Pain",
+    "Laughter",
+    "Sneeze",
+    "Cough",
+    "Door slam",
+    "Glass breaking",
+    "Alarm",
+    "Siren",
+    "Music",
+    "Baby cry",
+    "Dog bark",
+    "Cat meow",
+    "Footsteps",
+    "Knocking",
+    "Phone ringing",
+    "Microwave beep"
   ],
-  "sound_event_sensitivity": 0.7
+  "sound_event_sensitivity": 0.65,
+  "ui": {
+    "theme": "dark",
+    "accent_color": "#7B68EE",
+    "animation_speed": 0.3,
+    "visualization": {
+      "enabled": true,
+      "style": "wave",
+      "colors": {
+        "primary": "#7B68EE",
+        "secondary": "#9370DB",
+        "background": "#1E1E1E"
+      }
+    }
+  },
+  "proactive_behaviors": {
+    "enabled": true,
+    "check_interval": 300,
+    "triggers": {
+      "silence": {
+        "threshold": 1800,
+        "action": "check_wellbeing"
+      },
+      "repeated_sounds": {
+        "threshold": 3,
+        "timeframe": 60,
+        "action": "investigate"
+      }
+    }
+  }
 } 

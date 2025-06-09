@@ -13,8 +13,12 @@ from ai.nlp import Llama2
 from ai.emotion import EmotionDetector
 from ai.personality import Personality
 from ai.user_activity import UserActivity
+from ai.sound_event import SoundEventDetector
 from tasks.alarms import HotwordDetector
 from utils.logger import setup_logger
+import threading
+import queue
+import time
 
 logger = setup_logger(__name__)
 
@@ -24,7 +28,8 @@ class Aura:
         self.stt = SpeechToText()
         self.tts = TextToSpeech()
         self.nlp = Llama2(model_path="gpt2")
-        self.hotword = HotwordDetector(access_key=None)
+        self.hotword = HotwordDetector()
+        self.sound_detector = SoundEventDetector()
         self.emotion_detector = EmotionDetector()
         self.personality = Personality()
         self.user_activity = UserActivity()
@@ -53,6 +58,7 @@ class Aura:
         # State tracking
         self.previous_activity = None
         self.is_active = True
+        self.wake_queue = queue.Queue()
         
     def record_audio(self):
         """Record audio from microphone"""
@@ -88,7 +94,22 @@ class Aura:
         except Exception as e:
             logger.error(f"Error recording audio: {e}")
             return None
-            
+
+    def monitor_sound_events(self):
+        """Monitor for unusual sounds in a separate thread"""
+        while self.is_active:
+            try:
+                audio_file = self.record_audio()
+                if audio_file:
+                    event_name, score = self.sound_detector.detect(audio_file)
+                    if event_name:
+                        logger.info(f"Unusual sound detected: {event_name} (score: {score:.2f})")
+                        self.wake_queue.put(("sound", event_name))
+                    os.unlink(audio_file)
+            except Exception as e:
+                logger.error(f"Error in sound monitoring: {e}")
+            time.sleep(0.1)  # Small delay to prevent CPU overload
+
     def capture_frame(self):
         """Capture a frame from the camera"""
         if self.camera is None:
@@ -106,9 +127,29 @@ class Aura:
     async def process_interaction(self):
         """Process a single interaction cycle"""
         try:
-            # Wait for hotword
-            logger.info("Waiting for wake word...")
-            self.hotword.start_listening()
+            # Start sound monitoring in a separate thread
+            sound_thread = threading.Thread(target=self.monitor_sound_events, daemon=True)
+            sound_thread.start()
+            
+            # Wait for either hotword or unusual sound
+            logger.info("Waiting for wake trigger...")
+            
+            while self.is_active:
+                # Check hotword
+                if self.hotword.start_listening():
+                    logger.info("Wake word detected!")
+                    break
+                
+                # Check for unusual sounds
+                try:
+                    trigger_type, event_name = self.wake_queue.get_nowait()
+                    if trigger_type == "sound":
+                        logger.info(f"Waking up due to {event_name}")
+                        break
+                except queue.Empty:
+                    pass
+                
+                await asyncio.sleep(0.1)
             
             # Record user input
             audio_file = self.record_audio()
@@ -192,6 +233,7 @@ class Aura:
         except KeyboardInterrupt:
             logger.info("Shutting down Aura...")
         finally:
+            self.is_active = False
             if self.camera is not None:
                 self.camera.release()
             self.p.terminate()
@@ -199,9 +241,6 @@ class Aura:
     def shutdown(self):
         """Gracefully shutdown Aura"""
         self.is_active = False
-        if self.camera is not None:
-            self.camera.release()
-        self.p.terminate()
 
 async def main():
     aura = Aura()
