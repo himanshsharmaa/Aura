@@ -24,7 +24,7 @@ class Aura:
         self.stt = SpeechToText()
         self.tts = TextToSpeech()
         self.nlp = Llama2(model_path="gpt2")
-        self.hotword = HotwordDetector()
+        self.hotword = HotwordDetector(access_key=None)
         self.emotion_detector = EmotionDetector()
         self.personality = Personality()
         self.user_activity = UserActivity()

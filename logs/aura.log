@@ -7,3 +7,83 @@ If this is a private repository, make sure to pass a token having permission to 
 2025-06-09 23:28:17,266 - ai.nlp - INFO - Loading language model from gpt2
 2025-06-09 23:29:08,489 - ai.nlp - ERROR - Error loading language model: Using `low_cpu_mem_usage=True`, a `device_map` or a `tp_plan` requires Accelerate: `pip install 'accelerate>=0.26.0'`
 2025-06-09 23:29:41,554 - ai.nlp - INFO - Loading language model from gpt2
+2025-06-09 23:41:25,693 - ai.nlp - INFO - Language model loaded successfully
+2025-06-09 23:44:18,215 - ai.nlp - INFO - Loading language model from gpt2
+2025-06-09 23:44:20,702 - ai.nlp - INFO - Language model loaded successfully
+2025-06-09 23:44:20,702 - tasks.alarms - WARNING - No Picovoice access key provided. Hotword detection will be disabled.
+2025-06-09 23:44:20,706 - ai.personality - ERROR - Error initializing database: unable to open database file
+2025-06-09 23:44:43,209 - ai.nlp - INFO - Loading language model from gpt2
+2025-06-09 23:44:45,840 - ai.nlp - INFO - Language model loaded successfully
+2025-06-09 23:44:45,841 - tasks.alarms - WARNING - No Picovoice access key provided. Hotword detection will be disabled.
+2025-06-09 23:44:45,865 - ai.personality - INFO - Database initialized successfully
+2025-06-09 23:44:45,865 - ai.user_activity - WARNING - Model file not found, using placeholder model
+2025-06-09 23:44:46,346 - __main__ - INFO - Starting Aura...
+2025-06-09 23:44:46,346 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:44:46,346 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:44:46,404 - __main__ - INFO - Recording...
+2025-06-09 23:44:51,404 - __main__ - INFO - Recording finished
+2025-06-09 23:45:26,588 - __main__ - INFO - User said: 
+2025-06-09 23:45:26,589 - __main__ - WARNING - No speech detected
+2025-06-09 23:45:26,589 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:45:26,590 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:45:26,613 - __main__ - INFO - Recording...
+2025-06-09 23:45:31,613 - __main__ - INFO - Recording finished
+2025-06-09 23:45:31,970 - __main__ - INFO - User said: 
+2025-06-09 23:45:31,971 - __main__ - WARNING - No speech detected
+2025-06-09 23:45:31,971 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:45:31,972 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:45:31,994 - __main__ - INFO - Recording...
+2025-06-09 23:45:36,994 - __main__ - INFO - Recording finished
+2025-06-09 23:45:37,358 - __main__ - INFO - User said: 
+2025-06-09 23:45:37,358 - __main__ - WARNING - No speech detected
+2025-06-09 23:45:37,359 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:45:37,359 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:45:37,383 - __main__ - INFO - Recording...
+2025-06-09 23:45:42,382 - __main__ - INFO - Recording finished
+2025-06-09 23:45:42,737 - __main__ - INFO - User said: 
+2025-06-09 23:45:42,737 - __main__ - WARNING - No speech detected
+2025-06-09 23:45:42,738 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:45:42,738 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:45:42,761 - __main__ - INFO - Recording...
+2025-06-09 23:45:47,760 - __main__ - INFO - Recording finished
+2025-06-09 23:45:48,116 - __main__ - INFO - User said: 
+2025-06-09 23:45:48,117 - __main__ - WARNING - No speech detected
+2025-06-09 23:45:48,118 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:45:48,118 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:45:48,141 - __main__ - INFO - Recording...
+2025-06-09 23:45:53,140 - __main__ - INFO - Recording finished
+2025-06-09 23:45:53,494 - __main__ - INFO - User said: 
+2025-06-09 23:45:53,495 - __main__ - WARNING - No speech detected
+2025-06-09 23:45:53,496 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:45:53,496 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:45:53,518 - __main__ - INFO - Recording...
+2025-06-09 23:45:58,518 - __main__ - INFO - Recording finished
+2025-06-09 23:45:58,868 - __main__ - INFO - User said: 
+2025-06-09 23:45:58,868 - __main__ - WARNING - No speech detected
+2025-06-09 23:45:58,869 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:45:58,870 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:45:58,893 - __main__ - INFO - Recording...
+2025-06-09 23:46:03,893 - __main__ - INFO - Recording finished
+2025-06-09 23:46:04,239 - __main__ - INFO - User said: 
+2025-06-09 23:46:04,240 - __main__ - WARNING - No speech detected
+2025-06-09 23:46:04,241 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:46:04,241 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:46:04,264 - __main__ - INFO - Recording...
+2025-06-09 23:46:09,264 - __main__ - INFO - Recording finished
+2025-06-09 23:46:09,655 - __main__ - INFO - User said: 
+2025-06-09 23:46:09,655 - __main__ - WARNING - No speech detected
+2025-06-09 23:46:09,656 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:46:09,656 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:46:09,681 - __main__ - INFO - Recording...
+2025-06-09 23:46:14,680 - __main__ - INFO - Recording finished
+2025-06-09 23:46:15,039 - __main__ - INFO - User said: 
+2025-06-09 23:46:15,039 - __main__ - WARNING - No speech detected
+2025-06-09 23:46:15,040 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:46:15,040 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:46:15,062 - __main__ - INFO - Recording...
+2025-06-09 23:46:20,061 - __main__ - INFO - Recording finished
+2025-06-09 23:46:20,459 - __main__ - INFO - User said: 
+2025-06-09 23:46:20,460 - __main__ - WARNING - No speech detected
+2025-06-09 23:46:20,460 - __main__ - INFO - Waiting for wake word...
+2025-06-09 23:46:20,460 - tasks.alarms - WARNING - Hotword detection is disabled. Skipping wake word detection.
+2025-06-09 23:46:20,482 - __main__ - INFO - Recording...
