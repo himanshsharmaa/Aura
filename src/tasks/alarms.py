@@ -3,23 +3,31 @@
 import pvporcupine
 import pyaudio
 import os
+import json
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
+# Load config
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), '..', 'config.json')
+try:
+    with open(CONFIG_PATH, 'r') as f:
+        config = json.load(f)
+except Exception as e:
+    logger.error(f"Could not load config: {e}")
+    config = {}
+
 class HotwordDetector:
-    def __init__(self, keyword="hey aura", access_key=None):
-        """
-        Initialize the Porcupine hotword detection.
-        :param keyword: The wake word to listen for.
-        :param access_key: Picovoice access key for Porcupine.
-        """
+    def __init__(self, keyword=None, access_key=None):
+        if not keyword:
+            keyword = config.get('hotword', 'aura')
         if not access_key:
-            logger.warning("No Picovoice access key provided. Hotword detection will be disabled.")
+            access_key = config.get('porcupine_access_key', None)
+        if not access_key or access_key == 'YOUR_PICOVOICE_ACCESS_KEY_HERE':
+            logger.warning("No valid Picovoice access key provided. Hotword detection will be disabled.")
             self.porcupine = None
             self.audio_stream = None
             return
-
         try:
             self.porcupine = pvporcupine.create(
                 access_key=access_key,
@@ -37,7 +45,7 @@ class HotwordDetector:
         """
         if not self.porcupine:
             logger.warning("Hotword detection is disabled. Skipping wake word detection.")
-            return
+            return False
 
         try:
             pa = pyaudio.PyAudio()
@@ -48,17 +56,19 @@ class HotwordDetector:
                 input=True,
                 frames_per_buffer=self.porcupine.frame_length,
             )
-            logger.info("Listening for hotword...")
+            logger.info(f"Listening for hotword '{self.porcupine.keywords[0]}'...")
 
             while True:
                 pcm = self.audio_stream.read(self.porcupine.frame_length)
                 if self.porcupine.process(pcm) >= 0:
                     logger.info("Hotword detected!")
                     break
+            return True
         except Exception as e:
             logger.error(f"Error in hotword detection: {e}")
+            return False
         finally:
             if self.audio_stream:
                 self.audio_stream.close()
-            if pa:
+            if 'pa' in locals():
                 pa.terminate()

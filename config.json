@@ -1,0 +1,12 @@
+{
+  "hotword": "aura",
+  "porcupine_access_key": "YOUR_PICOVOICE_ACCESS_KEY_HERE",
+  "sound_events": [
+    "Shout",
+    "Scream",
+    "Crying, sobbing",
+    "Groan",
+    "Pain"
+  ],
+  "sound_event_sensitivity": 0.7
+} 
