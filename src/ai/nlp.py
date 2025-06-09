@@ -1,35 +1,35 @@
 # NLP and Llama 2 integration
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 class Llama2:
-    def __init__(self, model_path="meta-llama/Llama-2-7b-chat-hf"):
+    def __init__(self, model_path="gpt2"):
         """
-        Initialize the Llama 2 model for natural language processing.
+        Initialize the language model for natural language processing.
         
         Args:
-            model_path (str): Path to the Llama 2 model or Hugging Face model ID
+            model_path (str): Path to the model or Hugging Face model ID
         """
         try:
-            logger.info(f"Loading Llama 2 model from {model_path}")
-            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-            self.model = AutoModelForCausalLM.from_pretrained(
+            logger.info(f"Loading language model from {model_path}")
+            self.tokenizer = GPT2Tokenizer.from_pretrained(model_path)
+            self.model = GPT2LMHeadModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.float16,
                 device_map="auto"
             )
-            logger.info("Llama 2 model loaded successfully")
+            logger.info("Language model loaded successfully")
         except Exception as e:
-            logger.error(f"Error loading Llama 2 model: {e}")
+            logger.error(f"Error loading language model: {e}")
             raise
 
     def generate_response(self, user_input, max_length=200):
         """
-        Generate a response using the Llama 2 model.
+        Generate a response using the language model.
         
         Args:
             user_input (str): The user's input text

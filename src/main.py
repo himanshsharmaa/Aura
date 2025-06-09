@@ -23,7 +23,7 @@ class Aura:
         # Initialize core modules
         self.stt = SpeechToText()
         self.tts = TextToSpeech()
-        self.nlp = Llama2(model_path="path_to_llama2_model")
+        self.nlp = Llama2(model_path="gpt2")
         self.hotword = HotwordDetector()
         self.emotion_detector = EmotionDetector()
         self.personality = Personality()

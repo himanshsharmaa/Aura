@@ -1,3 +1,9 @@
 2025-06-09 22:43:31,642 - ai.nlp - INFO - Loading Llama 2 model from path_to_llama2_model
 2025-06-09 22:43:32,135 - ai.nlp - ERROR - Error loading Llama 2 model: path_to_llama2_model is not a local folder and is not a valid model identifier listed on 'https://huggingface.co/models'
 If this is a private repository, make sure to pass a token having permission to this repo either by logging in with `huggingface-cli login` or by passing `token=<your_token>`
+2025-06-09 23:27:49,741 - ai.nlp - INFO - Loading language model from path_to_llama2_model
+2025-06-09 23:27:50,698 - ai.nlp - ERROR - Error loading language model: path_to_llama2_model is not a local folder and is not a valid model identifier listed on 'https://huggingface.co/models'
+If this is a private repository, make sure to pass a token having permission to this repo either by logging in with `huggingface-cli login` or by passing `token=<your_token>`
+2025-06-09 23:28:17,266 - ai.nlp - INFO - Loading language model from gpt2
+2025-06-09 23:29:08,489 - ai.nlp - ERROR - Error loading language model: Using `low_cpu_mem_usage=True`, a `device_map` or a `tp_plan` requires Accelerate: `pip install 'accelerate>=0.26.0'`
+2025-06-09 23:29:41,554 - ai.nlp - INFO - Loading language model from gpt2
