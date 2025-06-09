@@ -10,6 +10,9 @@ from PyQt5.QtGui import QPixmap, QImage
 import cv2
 import numpy as np
 from datetime import datetime
+import json
+import pyqtgraph as pg
+import sounddevice as sd
 
 from utils.logger import setup_logger
 from src.core.personality import Personality
@@ -23,6 +26,133 @@ from src.core.memory import MemoryManager
 from src.ui.settings_panel import SettingsPanel
 
 logger = setup_logger(__name__)
+
+class VisualizationWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(400, 200)
+        self.audio_data = np.zeros(1024)
+        self.spectrum_data = np.zeros(1024)
+        self.animation_timer = QTimer()
+        self.animation_timer.timeout.connect(self.update)
+        self.animation_timer.start(30)  # 30ms = ~33fps
+        
+        # Load config
+        with open('config.json', 'r') as f:
+            self.config = json.load(f)
+            
+        # Set up audio stream
+        self.stream = sd.InputStream(
+            channels=1,
+            samplerate=44100,
+            callback=self.audio_callback
+        )
+        self.stream.start()
+        
+    def audio_callback(self, indata, frames, time, status):
+        if status:
+            print(status)
+        self.audio_data = np.roll(self.audio_data, -frames)
+        self.audio_data[-frames:] = indata[:, 0]
+        self.spectrum_data = np.abs(np.fft.rfft(self.audio_data))
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Get colors from config
+        colors = self.config['ui']['visualization']['colors']
+        primary = QColor(colors['primary'])
+        secondary = QColor(colors['secondary'])
+        background = QColor(colors['background'])
+        
+        # Draw background
+        painter.fillRect(self.rect(), background)
+        
+        # Draw visualization based on style
+        if self.config['ui']['visualization']['style'] == 'wave':
+            self.draw_wave(painter, primary, secondary)
+        else:
+            self.draw_spectrum(painter, primary, secondary)
+            
+    def draw_wave(self, painter, primary, secondary):
+        path = QPainterPath()
+        width = self.width()
+        height = self.height()
+        
+        # Draw main wave
+        path.moveTo(0, height/2)
+        for i in range(len(self.audio_data)):
+            x = i * width / len(self.audio_data)
+            y = height/2 + self.audio_data[i] * height/2
+            path.lineTo(x, y)
+            
+        # Draw wave
+        painter.setPen(QPen(primary, 2))
+        painter.drawPath(path)
+        
+        # Draw secondary wave
+        path2 = QPainterPath()
+        path2.moveTo(0, height/2)
+        for i in range(len(self.audio_data)):
+            x = i * width / len(self.audio_data)
+            y = height/2 + self.audio_data[i] * height/4
+            path2.lineTo(x, y)
+            
+        painter.setPen(QPen(secondary, 1))
+        painter.drawPath(path2)
+        
+    def draw_spectrum(self, painter, primary, secondary):
+        width = self.width()
+        height = self.height()
+        bar_width = width / len(self.spectrum_data)
+        
+        for i in range(len(self.spectrum_data)):
+            x = i * bar_width
+            h = self.spectrum_data[i] * height
+            color = QColor(primary)
+            color.setAlpha(int(255 * (1 - i/len(self.spectrum_data))))
+            painter.fillRect(x, height-h, bar_width, h, color)
+            
+    def closeEvent(self, event):
+        self.stream.stop()
+        self.stream.close()
+        super().closeEvent(event)
+
+class StatusWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        
+        # Status label
+        self.status_label = QLabel("Listening...")
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_label.setStyleSheet("""
+            QLabel {
+                color: #7B68EE;
+                font-size: 18px;
+                font-weight: bold;
+            }
+        """)
+        layout.addWidget(self.status_label)
+        
+        # Event label
+        self.event_label = QLabel("")
+        self.event_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.event_label.setStyleSheet("""
+            QLabel {
+                color: #9370DB;
+                font-size: 14px;
+            }
+        """)
+        layout.addWidget(self.event_label)
+        
+    def update_status(self, status, event=None):
+        self.status_label.setText(status)
+        if event:
+            self.event_label.setText(f"Detected: {event}")
+        else:
+            self.event_label.setText("")
 
 class AuraWindow(QMainWindow):
     def __init__(self):
