@@ -521,4 +521,26 @@ class DeviceOptimizer:
             
     def __del__(self):
         """Destructor to ensure cleanup"""
-        self.cleanup() 
+        self.cleanup()
+
+    def optimize_for_emotional_state(self, emotional_state: dict):
+        """Dynamically adjust device optimization based on emotional/cognitive state."""
+        try:
+            # Example: If stress or anger is high, prioritize cooling and stability
+            if emotional_state.get('angry', 0) > 0.7 or emotional_state.get('fear', 0) > 0.7:
+                self.cpu_limit = 0.6
+                self.memory_limit = 0.6
+                self.gpu_limit = 0.6
+                logger.info("Detected high stress/fear: Lowering resource limits for stability.")
+            # If happy or focused, allow more aggressive optimization
+            elif emotional_state.get('happy', 0) > 0.7 or emotional_state.get('neutral', 0) > 0.7:
+                self.cpu_limit = 0.9
+                self.memory_limit = 0.9
+                self.gpu_limit = 0.9
+                logger.info("Detected positive state: Raising resource limits for performance.")
+            else:
+                self.cpu_limit = 0.8
+                self.memory_limit = 0.8
+                self.gpu_limit = 0.8
+        except Exception as e:
+            logger.error(f"Error optimizing for emotional state: {e}") 

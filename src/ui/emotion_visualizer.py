@@ -61,16 +61,20 @@ class SystemMetrics:
 
 class EmotionalIntelligence:
     def __init__(self):
-        self.emotion_history = deque(maxlen=100)
+        self.emotion_history = deque(maxlen=200)
         self.emotional_patterns = {}
-        self.context_history = deque(maxlen=50)
+        self.context_history = deque(maxlen=100)
         self.learning_rate = 0.1
         self.stability_threshold = 0.2
         self.pattern_recognition_threshold = 0.7
+        self.learned_responses = {}
+        self.pattern_memory = []
+        self.adaptive_weights = {}
         
     def analyze_emotions(self, emotions: Dict[str, float]) -> EmotionalState:
         """Analyze current emotional state and context"""
         self.emotion_history.append(emotions.copy())
+        self._learn_patterns(emotions)
         
         # Calculate emotional intensity
         intensity = max(emotions.values())
@@ -249,7 +253,51 @@ class EmotionalIntelligence:
                 'suggestions': [f'Enhance {dominant[0]} visualization', 'Adjust color intensity', 'Modify wave pattern']
             })
             
+        # Add more sophisticated, context-aware responses
+        if dominant[1] > 0.8:
+            responses.append({
+                'type': 'proactive',
+                'priority': 'high',
+                'suggestions': [f'Initiate proactive support for {dominant[0]}', 'Engage in context-aware dialogue']
+            })
+            
+        # Use learned responses
+        if dominant[0] in self.learned_responses:
+            responses.append({
+                'type': 'learned',
+                'priority': 'medium',
+                'suggestions': self.learned_responses[dominant[0]]
+            })
+            
         return responses
+
+    def _learn_patterns(self, emotions: Dict[str, float]):
+        """Learn and update emotional patterns over time."""
+        pattern = self._extract_pattern(emotions)
+        self.pattern_memory.append(pattern)
+        # Continual learning: update adaptive weights
+        for k, v in pattern.items():
+            if k not in self.adaptive_weights:
+                self.adaptive_weights[k] = v
+            else:
+                self.adaptive_weights[k] += self.learning_rate * (v - self.adaptive_weights[k])
+
+    def update_learned_response(self, emotion: str, response: str):
+        """Allow the system to learn new responses for emotions."""
+        if emotion not in self.learned_responses:
+            self.learned_responses[emotion] = []
+        if response not in self.learned_responses[emotion]:
+            self.learned_responses[emotion].append(response)
+
+    def continual_learning(self, feedback: Dict[str, Any]):
+        """Update learning based on feedback from user or system."""
+        for emotion, resp in feedback.get('responses', {}).items():
+            self.update_learned_response(emotion, resp)
+        # Adjust learning rate or thresholds if needed
+        if 'learning_rate' in feedback:
+            self.learning_rate = feedback['learning_rate']
+        if 'pattern_recognition_threshold' in feedback:
+            self.pattern_recognition_threshold = feedback['pattern_recognition_threshold']
 
 class PerformanceMonitor(QThread):
     metrics_updated = pyqtSignal(dict)
@@ -637,6 +685,11 @@ class EmotionVisualizer(QWidget):
                 
             self.emotion_updated.emit(emotions)
             
+            # After updating, optionally provide feedback for continual learning
+            if hasattr(self, 'last_feedback') and self.last_feedback:
+                self.provide_feedback(self.last_feedback)
+                self.last_feedback = None
+            
         except Exception as e:
             logger.error(f"Error updating emotions: {e}")
             self.error_count += 1
@@ -934,4 +987,16 @@ class EmotionVisualizer(QWidget):
                 
         except Exception as e:
             logger.error(f"Error drawing particles: {e}")
-            self.error_count += 1 
+            self.error_count += 1
+            
+    def provide_feedback(self, feedback: Dict[str, Any]):
+        """Allow external feedback to improve emotional intelligence."""
+        self.emotional_intelligence.continual_learning(feedback)
+
+    def update_emotions(self, emotions: Dict[str, float]):
+        # ... existing code ...
+        # After updating, optionally provide feedback for continual learning
+        if hasattr(self, 'last_feedback') and self.last_feedback:
+            self.provide_feedback(self.last_feedback)
+            self.last_feedback = None
+        # ... existing code ... 
