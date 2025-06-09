@@ -1,41 +1,68 @@
 # NLP and Llama 2 integration
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from utils.logger import setup_logger
 
-model_name = "meta-llama/Llama-2-7b-chat-hf"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
-print("Model downloaded successfully!")
+logger = setup_logger(__name__)
 
 class Llama2:
-    def __init__(self, model_path="meta-llama/Llama-2-7b-chat-hf", max_length=512):
+    def __init__(self, model_path="meta-llama/Llama-2-7b-chat-hf"):
         """
-        Initialize the Llama 2 model and tokenizer.
-        :param model_path: Path to the locally stored Llama 2 model.
-        :param max_length: Maximum length of the generated response.
+        Initialize the Llama 2 model for natural language processing.
+        
+        Args:
+            model_path (str): Path to the Llama 2 model or Hugging Face model ID
         """
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16)
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = self.model.to(self.device)
-        self.max_length = max_length
+        try:
+            logger.info(f"Loading Llama 2 model from {model_path}")
+            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                torch_dtype=torch.float16,
+                device_map="auto"
+            )
+            logger.info("Llama 2 model loaded successfully")
+        except Exception as e:
+            logger.error(f"Error loading Llama 2 model: {e}")
+            raise
 
-    def generate_response(self, user_input, context=None):
+    def generate_response(self, user_input, max_length=200):
         """
-        Generate a personalized response using Llama 2.
-        :param user_input: The user's input text.
-        :param context: Additional context for personalization (optional).
-        :return: Generated response as a string.
+        Generate a response using the Llama 2 model.
+        
+        Args:
+            user_input (str): The user's input text
+            max_length (int): Maximum length of the generated response
+            
+        Returns:
+            str: Generated response
         """
-        prompt = f"{context}\nUser: {user_input}\nAura:" if context else f"User: {user_input}\nAura:"
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-        outputs = self.model.generate(
-            inputs["input_ids"],
-            max_length=self.max_length,
-            temperature=0.7,
-            top_p=0.9,
-            pad_token_id=self.tokenizer.eos_token_id
-        )
-        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        return response.split("Aura:")[-1].strip()
+        try:
+            # Prepare the input prompt
+            prompt = f"User: {user_input}\nAura:"
+            
+            # Tokenize input
+            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+            
+            # Generate response
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_length=max_length,
+                    num_return_sequences=1,
+                    temperature=0.7,
+                    top_p=0.9,
+                    do_sample=True,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+            
+            # Decode and clean up response
+            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            response = response.replace(prompt, "").strip()
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+            return "I apologize, but I'm having trouble processing that right now."
