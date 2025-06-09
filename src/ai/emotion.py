@@ -5,6 +5,7 @@ import numpy as np
 from deepface import DeepFace
 import cv2
 from utils.logger import setup_logger
+from typing import Dict, Any
 
 logger = setup_logger(__name__)
 
@@ -97,6 +98,20 @@ class EmotionDetector:
             logger.error(f"Error in facial emotion analysis: {e}")
             return None
             
+    def learn_from_feedback(self, feedback: Dict[str, Any]):
+        """Learn from feedback to improve emotion detection and fusion."""
+        # Example: Adjust weights or add new rules based on feedback
+        if 'voice_weight' in feedback:
+            self.voice_weight = feedback['voice_weight']
+        if 'face_weight' in feedback:
+            self.face_weight = feedback['face_weight']
+        if 'new_rule' in feedback:
+            # Add new rule to detection logic (placeholder)
+            pass
+
+    def continual_learning(self, feedback: Dict[str, Any]):
+        self.learn_from_feedback(feedback)
+
     def combine_emotions(self, voice_emotion, face_emotion):
         """
         Combine voice and facial emotion analysis for a more accurate result.
@@ -117,8 +132,8 @@ class EmotionDetector:
             return voice_emotion
             
         # Combine emotions with weighted average
-        voice_weight = 0.4
-        face_weight = 0.6
+        voice_weight = getattr(self, 'voice_weight', 0.4)
+        face_weight = getattr(self, 'face_weight', 0.6)
         
         # If emotions match, increase confidence
         if voice_emotion['emotion'] == face_emotion['emotion']:

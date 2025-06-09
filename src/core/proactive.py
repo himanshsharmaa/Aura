@@ -303,4 +303,24 @@ class ProactiveBehavior:
                 
             self.last_interaction = datetime.fromisoformat(state['last_interaction'])
             self.interaction_cooldown = timedelta(seconds=state['interaction_cooldown'])
-            self.context = state['context'] 
+            self.context = state['context']
+
+    def learn_from_feedback(self, feedback: Dict[str, Any]):
+        """Learn and adapt proactive triggers and responses from feedback."""
+        if 'emotion' in feedback and 'response' in feedback:
+            emotion = feedback['emotion']
+            response = feedback['response']
+            if emotion in self.proactive_triggers['emotion_based']:
+                self.proactive_triggers['emotion_based'][emotion]['responses'].append(response)
+        if 'context' in feedback and 'response' in feedback:
+            context = feedback['context']
+            response = feedback['response']
+            if context in self.proactive_triggers['topic_based']:
+                self.proactive_triggers['topic_based'][context]['responses'].append(response)
+        # Optionally, adjust conditions or add new triggers
+        if 'new_trigger' in feedback:
+            self.proactive_triggers['custom'] = self.proactive_triggers.get('custom', [])
+            self.proactive_triggers['custom'].append(feedback['new_trigger'])
+
+    def continual_learning(self, feedback: Dict[str, Any]):
+        self.learn_from_feedback(feedback) 

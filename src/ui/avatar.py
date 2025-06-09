@@ -5,6 +5,7 @@ from PyQt6.QtGui import QPainter, QColor, QPen, QPainterPath, QFont, QBrush, QLi
 import numpy as np
 import math
 import random
+from typing import Dict, Any
 
 class Eye:
     def __init__(self, parent, x, y, radius):
@@ -402,4 +403,23 @@ class Avatar(QWidget):
             width = 100 * self.mouth_openness
             painter.setPen(QPen(QColor(255, 255, 255), 3))
             painter.drawLine(center_x - width/2, center_y,
-                           center_x + width/2, center_y) 
+                           center_x + width/2, center_y)
+
+    def learn_from_feedback(self, feedback: Dict[str, Any]):
+        """Learn and adapt avatar expressions and micro-expressions from feedback."""
+        if 'emotion' in feedback and 'expression' in feedback:
+            # Store or adapt new micro-expression for emotion
+            if not hasattr(self, 'learned_expressions'):
+                self.learned_expressions = {}
+            if feedback['emotion'] not in self.learned_expressions:
+                self.learned_expressions[feedback['emotion']] = []
+            self.learned_expressions[feedback['emotion']].append(feedback['expression'])
+        # Optionally, adapt animation parameters
+        if 'animation_speed' in feedback:
+            self.animation_speed = feedback['animation_speed']
+        if 'eye_color' in feedback:
+            self.left_eye.eye_color = feedback['eye_color']
+            self.right_eye.eye_color = feedback['eye_color']
+
+    def continual_learning(self, feedback: Dict[str, Any]):
+        self.learn_from_feedback(feedback) 

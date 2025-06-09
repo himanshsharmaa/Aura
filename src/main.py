@@ -205,8 +205,8 @@ class Aura:
                 f"User: {i['user_input']}\nAura: {i['aura_response']}"
                 for i in recent_interactions
             ])
-            
-            # Generate response
+
+    # Generate response
             response = self.nlp.generate_response(user_input)
             logger.info(f"Aura's Response: {response}")
             
@@ -217,8 +217,8 @@ class Aura:
                 emotion=emotion['emotion'] if emotion else None,
                 context=context
             )
-            
-            # Speak the response
+
+    # Speak the response
             await self.tts.speak(response)
             
         except Exception as e:
