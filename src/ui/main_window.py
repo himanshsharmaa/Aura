@@ -13,6 +13,7 @@ from datetime import datetime
 import json
 import pyqtgraph as pg
 import sounddevice as sd
+from .avatar import Avatar
 
 from utils.logger import setup_logger
 from src.core.personality import Personality
