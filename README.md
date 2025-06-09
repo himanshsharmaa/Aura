@@ -18,22 +18,23 @@
 <ul>
   <li><strong>Voice Interaction</strong>: Real-time speech-to-text (Whisper), text-to-speech (Edge-TTS), and hotword detection ("Hey Aura").</li>
   <li><strong>Emotion Detection</strong>: Voice tone analysis (librosa) and facial expression recognition (DeepFace) for adaptive responses.</li>
-  <li><strong>Memory & Personalization</strong>: Remembers user preferences, routines, and conversation history using SQLite.</li>
-  <li><strong>Context Awareness</strong>: Environmental sound classification and proactive behavior based on context.</li>
-  <li><strong>Visual UI (Planned)</strong>: Animated avatar/face for expressive interaction.</li>
-  <li><strong>Cloud Sync (Planned)</strong>: Sync memory and preferences across devices.</li>
+  <li><strong>Memory & Personalization</strong>: SQLite database for storing user preferences, routines, and conversation history.</li>
+  <li><strong>Context Awareness</strong>: Advanced sound event detection using YAMNet (TensorFlow) for detecting unusual sounds (shouting, crying, pain, etc.).</li>
+  <li><strong>Premium UI</strong>: Modern PyQt6-based interface with real-time audio visualizations and status updates.</li>
+  <li><strong>Proactive Behaviors</strong>: Context-aware responses based on sound events and user state.</li>
+  <li><strong>Parallel Processing</strong>: Hotword and sound event detection running simultaneously for enhanced responsiveness.</li>
 </ul>
 
 <h2 align="left">🔧 Tech Stack</h2>
 <p align="left">
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/PyQt6-41CD52?style=for-the-badge&logo=qt&logoColor=white"/>
   <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"/>
-  <img src="https://img.shields.io/badge/Transformers-FFBF00?style=for-the-badge&logo=huggingface&logoColor=white"/>
+  <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white"/>
   <img src="https://img.shields.io/badge/Whisper-000000?style=for-the-badge&logo=openai&logoColor=white"/>
   <img src="https://img.shields.io/badge/Edge--TTS-0078D4?style=for-the-badge&logo=microsoft&logoColor=white"/>
   <img src="https://img.shields.io/badge/DeepFace-FF4081?style=for-the-badge&logo=face&logoColor=white"/>
   <img src="https://img.shields.io/badge/Librosa-1DB954?style=for-the-badge&logo=librosa&logoColor=white"/>
-  <img src="https://img.shields.io/badge/PyAudio-003366?style=for-the-badge&logo=python&logoColor=white"/>
   <img src="https://img.shields.io/badge/Porcupine-FF6F00?style=for-the-badge&logo=picovoice&logoColor=white"/>
   <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white"/>
 </p>
@@ -44,12 +45,13 @@ Aura/
 │   .gitignore
 │   README.md
 │   requirements.txt
+│   config.json
 │
 ├───src
 │   ├───ai
 │   │       stt.py              # Speech-to-Text (Whisper)
 │   │       tts.py              # Text-to-Speech (Edge-TTS)
-│   │       nlp.py              # Llama 2 integration (Transformers)
+│   │       nlp.py              # GPT-2 integration
 │   │       emotion.py          # Emotion detection (librosa, DeepFace)
 │   │       personality.py      # Memory & personalization logic
 │   │       user_activity.py    # Sound classification & proactive behavior
@@ -58,16 +60,19 @@ Aura/
 │   ├───utils
 │   │       config.py           # Configuration management
 │   │       logger.py           # Logging utilities
+│   ├───ui
+│   │       main_window.py      # Main PyQt6 window
+│   │       visualizations.py   # Audio visualizations
+│   │       settings.py         # Settings panel
 │   ├───data
-│   │       memory.json         # Placeholder for memory (to be replaced with SQLite)
-│   │       user_data.json      # Placeholder for user preferences
-│   └───main.py                 # Main entry point
+│   │       aura.db            # SQLite database
+│   └───main.py                # Main entry point
 ├───tests
 │       test_stt.py
 │       test_tts.py
 │       test_emotion_detection.py
 │       test_integration.py
-├───models                      # Model files (Llama 2, sound classifiers, etc.)
+├───models                      # Model files
 ├───logs                        # Log files
 </pre>
 
@@ -88,10 +93,10 @@ source venv/bin/activate
   <li>Install dependencies:
     <pre><code>pip install -r requirements.txt</code></pre>
   </li>
-  <li>Download required models:
+  <li>Set up required API keys:
     <ul>
-      <li>Llama 2 model (requires Hugging Face access and token)</li>
-      <li>Sound classification model (downloaded automatically or manually)</li>
+      <li>Get a free Picovoice access key from <a href="https://console.picovoice.ai/">Picovoice Console</a></li>
+      <li>Get a Hugging Face token for model downloads</li>
     </ul>
   </li>
 </ol>
@@ -100,15 +105,27 @@ source venv/bin/activate
 <ol>
   <li>Create a <code>config.json</code> file in the project root:
     <pre><code>{
-  "llama_model_path": "path/to/llama2/model",
-  "sound_classifier_path": "models/sound_classifier.pt",
-  "database_path": "data/aura.db",
-  "wake_word": "hey aura",
-  "voice": "en-US-JennyNeural"
+  "hotword": "aura",
+  "porcupine_access_key": "YOUR_PICOVOICE_ACCESS_KEY",
+  "sound_events": {
+    "shouting": true,
+    "crying": true,
+    "pain": true,
+    "sensitivity": 0.7
+  },
+  "ui": {
+    "theme": "dark",
+    "colors": {
+      "primary": "#4CAF50",
+      "secondary": "#2196F3",
+      "background": "#1E1E1E"
+    }
+  },
+  "proactive_behaviors": {
+    "sound_events": true,
+    "emotion_detection": true
+  }
 }</code></pre>
-  </li>
-  <li>Set up environment variables (optional):
-    <pre><code>export AURA_API_KEY=your_api_key  # If using cloud services</code></pre>
   </li>
 </ol>
 
@@ -117,8 +134,14 @@ source venv/bin/activate
   <li>Start Aura:
     <pre><code>python src/main.py</code></pre>
   </li>
-  <li>Activate Aura by saying "Hey Aura".</li>
-  <li>Interact naturally with voice commands.</li>
+  <li>Activate Aura by either:
+    <ul>
+      <li>Saying "Hey Aura" (requires Picovoice access key)</li>
+      <li>Detecting unusual sounds (shouting, crying, pain)</li>
+    </ul>
+  </li>
+  <li>Interact through the modern UI or voice commands</li>
+  <li>Monitor real-time audio visualizations and status updates</li>
 </ol>
 
 <h2 align="left">📁 File Descriptions</h2>
@@ -126,6 +149,7 @@ source venv/bin/activate
   <li><code>src/ai/</code>: Core AI modules (STT, TTS, NLP, emotion, memory, sound classification).</li>
   <li><code>src/tasks/</code>: Hotword detection and scheduled tasks.</li>
   <li><code>src/utils/</code>: Configuration and logging utilities.</li>
+  <li><code>src/ui/</code>: User interface modules (main window, visualizations, settings).</li>
   <li><code>src/data/</code>: User memory and preferences (to be migrated to SQLite).</li>
   <li><code>src/main.py</code>: Main entry point for Aura.</li>
   <li><code>models/</code>: Pre-trained models (Llama 2, sound classifiers, etc.).</li>
