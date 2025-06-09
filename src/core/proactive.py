@@ -1,8 +1,26 @@
 import random
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable, Any
 from datetime import datetime, timedelta
 import json
 import os
+import asyncio
+import logging
+from dataclasses import dataclass
+from utils.logger import setup_logger
+
+logger = setup_logger(__name__)
+
+@dataclass
+class Action:
+    """Represents a proactive action that can be taken"""
+    name: str
+    description: str
+    priority: int  # 1-10, higher is more important
+    trigger_conditions: Dict[str, Any]  # Conditions that trigger this action
+    action_func: Callable  # Function to execute when triggered
+    cooldown: int = 300  # Seconds between repeated actions
+    last_triggered: Optional[datetime] = None
+    enabled: bool = True
 
 class ProactiveBehavior:
     def __init__(self, personality):
@@ -323,4 +341,97 @@ class ProactiveBehavior:
             self.proactive_triggers['custom'].append(feedback['new_trigger'])
 
     def continual_learning(self, feedback: Dict[str, Any]):
-        self.learn_from_feedback(feedback) 
+        self.learn_from_feedback(feedback)
+
+class ProactiveSystem:
+    def __init__(self):
+        """Initialize proactive system"""
+        self.actions: List[Action] = []
+        self.running = False
+        self.check_interval = 60  # Check for actions every minute
+        self.context = {}  # Current context for action evaluation
+        
+    def register_action(self, action: Action):
+        """Register a new proactive action"""
+        self.actions.append(action)
+        logger.info(f"Registered proactive action: {action.name}")
+        
+    def update_context(self, context: Dict[str, Any]):
+        """Update the current context for action evaluation"""
+        self.context.update(context)
+        
+    def _should_trigger(self, action: Action) -> bool:
+        """Check if an action should be triggered based on conditions"""
+        if not action.enabled:
+            return False
+            
+        # Check cooldown
+        if action.last_triggered:
+            time_since_last = (datetime.now() - action.last_triggered).total_seconds()
+            if time_since_last < action.cooldown:
+                return False
+                
+        # Check trigger conditions
+        for key, value in action.trigger_conditions.items():
+            if key not in self.context:
+                return False
+            if self.context[key] != value:
+                return False
+                
+        return True
+        
+    async def check_actions(self):
+        """Check for actions that should be triggered"""
+        for action in sorted(self.actions, key=lambda x: x.priority, reverse=True):
+            if self._should_trigger(action):
+                try:
+                    logger.info(f"Triggering proactive action: {action.name}")
+                    await action.action_func()
+                    action.last_triggered = datetime.now()
+                except Exception as e:
+                    logger.error(f"Error executing action {action.name}: {e}")
+                    
+    async def start(self):
+        """Start the proactive system"""
+        self.running = True
+        while self.running:
+            await self.check_actions()
+            await asyncio.sleep(self.check_interval)
+            
+    def stop(self):
+        """Stop the proactive system"""
+        self.running = False
+        
+    def get_available_actions(self) -> List[Action]:
+        """Get list of available actions"""
+        return [action for action in self.actions if action.enabled]
+        
+    def enable_action(self, action_name: str):
+        """Enable a specific action"""
+        for action in self.actions:
+            if action.name == action_name:
+                action.enabled = True
+                logger.info(f"Enabled action: {action_name}")
+                return
+                
+    def disable_action(self, action_name: str):
+        """Disable a specific action"""
+        for action in self.actions:
+            if action.name == action_name:
+                action.enabled = False
+                logger.info(f"Disabled action: {action_name}")
+                return
+                
+    def get_action_status(self, action_name: str) -> Optional[Dict[str, Any]]:
+        """Get status of a specific action"""
+        for action in self.actions:
+            if action.name == action_name:
+                return {
+                    'enabled': action.enabled,
+                    'last_triggered': action.last_triggered,
+                    'cooldown_remaining': (
+                        action.cooldown - (datetime.now() - action.last_triggered).total_seconds()
+                        if action.last_triggered else 0
+                    )
+                }
+        return None 

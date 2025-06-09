@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QRect, QParallelAnimationGroup, QSequentialAnimationGroup
+from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QRect, QParallelAnimationGroup, QSequentialAnimationGroup, pyqtSlot
 from PyQt6.QtGui import QPainter, QColor, QPen, QPainterPath, QFont, QBrush, QLinearGradient, QRadialGradient
 import numpy as np
 import math
@@ -26,6 +26,8 @@ class Eye:
         self.eye_color = QColor(255, 255, 255)
         self.pupil_color = QColor(0, 0, 0)
         self.highlight_color = QColor(255, 255, 255, 180)
+        self.eyebrow_offset = 0
+        self.eyebrow_angle = 0
         
     def update(self, mouse_pos=None, emotion=None, processing_level=0.0):
         if emotion:
@@ -145,6 +147,55 @@ class Eye:
         # Restore painter state
         painter.restore()
 
+    def set_emotion(self, emotion):
+        self.emotion = emotion
+        if emotion == "happy":
+            self.eyebrow_offset = -8
+            self.eyebrow_angle = -15
+        elif emotion == "sad":
+            self.eyebrow_offset = 8
+            self.eyebrow_angle = 15
+        elif emotion == "angry":
+            self.eyebrow_offset = -4
+            self.eyebrow_angle = 20
+        elif emotion == "surprised":
+            self.eyebrow_offset = -12
+            self.eyebrow_angle = 0
+        else:
+            self.eyebrow_offset = 0
+            self.eyebrow_angle = 0
+
+class Mouth:
+    def __init__(self, parent, x, y, width, height):
+        self.parent = parent
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.open_amount = 0.0  # 0.0 = closed, 1.0 = fully open
+        self.smile = 0.0  # -1.0 = frown, 0.0 = neutral, 1.0 = smile
+        self.shape = "neutral"
+
+    def set_emotion(self, emotion):
+        if emotion == "happy":
+            self.smile = 1.0
+            self.shape = "smile"
+        elif emotion == "sad":
+            self.smile = -1.0
+            self.shape = "frown"
+        elif emotion == "angry":
+            self.smile = -0.5
+            self.shape = "flat"
+        elif emotion == "surprised":
+            self.smile = 0.0
+            self.shape = "open"
+        else:
+            self.smile = 0.0
+            self.shape = "neutral"
+
+    def animate_open(self, amount):
+        self.open_amount = max(0.0, min(1.0, amount))
+
 class Avatar(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -170,9 +221,9 @@ class Avatar(QWidget):
         self.target_processing_level = 0.0
         
         # Mouth animation
+        self.mouth = Mouth(self, 150, 240, 60, 32)
         self.mouth_openness = 0.0
         self.target_mouth_openness = 0.0
-        self.mouth_shape = "neutral"
         
         # Face features
         self.eyebrow_height = 0
@@ -183,6 +234,11 @@ class Avatar(QWidget):
         # Animation groups
         self.animation_group = QParallelAnimationGroup()
         self.setup_animations()
+        
+        self.lip_sync_enabled = True
+        self.lip_sync_amplitude = 0.0
+        self.lip_sync_decay = 0.85
+        self.lip_sync_scale = 1.0
         
     def setup_animations(self):
         # Create animations for different features
@@ -207,32 +263,33 @@ class Avatar(QWidget):
         self.emotion_intensity = intensity
         self.left_eye.emotion = emotion
         self.right_eye.emotion = emotion
+        self.mouth.set_emotion(emotion)
         
         # Update facial features based on emotion
         if emotion == "happy":
             self.target_eyebrow_height = -20
             self.target_face_rotation = 5
-            self.mouth_shape = "smile"
+            self.mouth_openness = 0.5
         elif emotion == "sad":
             self.target_eyebrow_height = 20
             self.target_face_rotation = -5
-            self.mouth_shape = "frown"
+            self.mouth_openness = 0.2
         elif emotion == "angry":
             self.target_eyebrow_height = -30
             self.target_face_rotation = 0
-            self.mouth_shape = "angry"
+            self.mouth_openness = 0.0
         elif emotion == "thinking":
             self.target_eyebrow_height = 10
             self.target_face_rotation = 0
-            self.mouth_shape = "neutral"
+            self.mouth_openness = 0.0
         elif emotion == "surprised":
             self.target_eyebrow_height = -40
             self.target_face_rotation = 0
-            self.mouth_shape = "o"
+            self.mouth_openness = 1.0
         else:  # neutral
             self.target_eyebrow_height = 0
             self.target_face_rotation = 0
-            self.mouth_shape = "neutral"
+            self.mouth_openness = 0.0
             
         # Start animations
         self.eyebrow_animation.setStartValue(self.eyebrow_height)
@@ -370,7 +427,7 @@ class Avatar(QWidget):
         center_x = self.width() / 2
         center_y = 250
         
-        if self.mouth_shape == "smile":
+        if self.mouth.shape == "smile":
             # Happy mouth
             path = QPainterPath()
             path.moveTo(center_x - 50, center_y)
@@ -378,7 +435,7 @@ class Avatar(QWidget):
                        center_x + 50, center_y)
             painter.setPen(QPen(QColor(255, 255, 255), 3))
             painter.drawPath(path)
-        elif self.mouth_shape == "frown":
+        elif self.mouth.shape == "frown":
             # Sad mouth
             path = QPainterPath()
             path.moveTo(center_x - 50, center_y)
@@ -386,14 +443,14 @@ class Avatar(QWidget):
                        center_x + 50, center_y)
             painter.setPen(QPen(QColor(255, 255, 255), 3))
             painter.drawPath(path)
-        elif self.mouth_shape == "angry":
+        elif self.mouth.shape == "angry":
             # Angry mouth
             path = QPainterPath()
             path.moveTo(center_x - 40, center_y)
             path.lineTo(center_x + 40, center_y)
             painter.setPen(QPen(QColor(255, 255, 255), 3))
             painter.drawPath(path)
-        elif self.mouth_shape == "o":
+        elif self.mouth.shape == "open":
             # Surprised mouth
             painter.setPen(QPen(QColor(255, 255, 255), 3))
             painter.drawEllipse(center_x - 30, center_y - 30 * self.mouth_openness,
@@ -422,4 +479,27 @@ class Avatar(QWidget):
             self.right_eye.eye_color = feedback['eye_color']
 
     def continual_learning(self, feedback: Dict[str, Any]):
-        self.learn_from_feedback(feedback) 
+        self.learn_from_feedback(feedback)
+
+    @pyqtSlot(float)
+    def update_lip_sync(self, amplitude: float):
+        """Update mouth openness based on amplitude (0.0-1.0) from TTS audio playback."""
+        if self.lip_sync_enabled:
+            # Smooth amplitude for natural animation
+            self.lip_sync_amplitude = max(self.lip_sync_amplitude * self.lip_sync_decay, amplitude)
+            self.mouth.animate_open(self.lip_sync_amplitude * self.lip_sync_scale)
+            self.update()
+
+    def animate_mouth(self):
+        # If lip-sync is enabled, use amplitude to drive mouth
+        if self.lip_sync_enabled:
+            # Decay amplitude over time for smooth closing
+            self.lip_sync_amplitude *= self.lip_sync_decay
+            self.mouth.animate_open(self.lip_sync_amplitude * self.lip_sync_scale)
+            self.update()
+        else:
+            # Smoothly animate mouth open/close to target
+            delta = self.mouth_open_target - self.mouth.open_amount
+            if abs(delta) > 0.01:
+                self.mouth.open_amount += delta * 0.2
+                self.update() 
