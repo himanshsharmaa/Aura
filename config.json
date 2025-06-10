@@ -1,56 +1,54 @@
 {
   "hotword": "aura",
-  "porcupine_access_key": "YOUR_PICOVOICE_ACCESS_KEY_HERE",
+  "hotword_detection": {
+    "model_path": "models/hotword_model.pth",
+    "threshold": 0.7,
+    "sample_rate": 16000,
+    "window_size": 0.5,
+    "hop_length": 0.1
+  },
   "sound_events": [
     "Shout",
     "Scream",
     "Crying, sobbing",
     "Groan",
     "Pain",
-    "Laughter",
-    "Sneeze",
-    "Cough",
-    "Door slam",
-    "Glass breaking",
-    "Alarm",
-    "Siren",
-    "Music",
-    "Baby cry",
-    "Dog bark",
-    "Cat meow",
-    "Footsteps",
-    "Knocking",
-    "Phone ringing",
-    "Microwave beep"
+    "Laugh",
+    "Sigh",
+    "Whisper",
+    "Silence"
   ],
-  "sound_event_sensitivity": 0.65,
+  "sound_event_detection": {
+    "model": "models/yamnet_model",
+    "threshold": 0.5,
+    "min_duration": 0.5
+  },
+  "emotion_detection": {
+    "voice": {
+      "enabled": true,
+      "model": "models/voice_emotion_model.pth",
+      "threshold": 0.6
+    },
+    "face": {
+      "enabled": true,
+      "model": "models/face_emotion_model.pth",
+      "confidence_threshold": 0.7
+    }
+  },
+  "database": {
+    "path": "data/aura.db",
+    "backup_interval": 3600
+  },
   "ui": {
     "theme": "dark",
-    "accent_color": "#7B68EE",
-    "animation_speed": 0.3,
-    "visualization": {
-      "enabled": true,
-      "style": "wave",
-      "colors": {
-        "primary": "#7B68EE",
-        "secondary": "#9370DB",
-        "background": "#1E1E1E"
-      }
+    "colors": {
+      "primary": "#4CAF50",
+      "secondary": "#2196F3",
+      "background": "#1E1E1E"
     }
   },
   "proactive_behaviors": {
-    "enabled": true,
-    "check_interval": 300,
-    "triggers": {
-      "silence": {
-        "threshold": 1800,
-        "action": "check_wellbeing"
-      },
-      "repeated_sounds": {
-        "threshold": 3,
-        "timeframe": 60,
-        "action": "investigate"
-      }
-    }
+    "sound_events": true,
+    "emotion_detection": true
   }
 } 
