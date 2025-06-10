@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura - Voice Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-16">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-5xl font-bold text-gray-900 mb-8">
+                Welcome to Aura
+            </h1>
+            <p class="text-xl text-gray-600 mb-12">
+                Your personalized voice assistant powered by AI
+            </p>
+            
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">
+                    Sign in to get started
+                </h2>
+                
+                <div class="space-y-4">
+                    <a href="/auth/google" 
+                       class="block w-full max-w-sm mx-auto bg-white border border-gray-300 rounded-lg px-6 py-3 text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out">
+                        <div class="flex items-center justify-center">
+                            <img src="https://www.google.com/favicon.ico" alt="Google" class="w-6 h-6 mr-3">
+                            <span>Continue with Google</span>
+                        </div>
+                    </a>
+                    
+                    <a href="/auth/github"
+                       class="block w-full max-w-sm mx-auto bg-gray-800 rounded-lg px-6 py-3 text-white hover:bg-gray-700 transition duration-150 ease-in-out">
+                        <div class="flex items-center justify-center">
+                            <img src="https://github.com/favicon.ico" alt="GitHub" class="w-6 h-6 mr-3">
+                            <span>Continue with GitHub</span>
+                        </div>
+                    </a>
+                </div>
+                
+                <p class="mt-8 text-sm text-gray-500">
+                    By signing in, you agree to our Terms of Service and Privacy Policy
+                </p>
+            </div>
+            
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-lg p-6 shadow-md">
+                    <div class="text-blue-500 text-4xl mb-4">
+                        <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">
+                        Voice Commands
+                    </h3>
+                    <p class="text-gray-600">
+                        Train your assistant to recognize custom voice commands
+                    </p>
+                </div>
+                
+                <div class="bg-white rounded-lg p-6 shadow-md">
+                    <div class="text-green-500 text-4xl mb-4">
+                        <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">
+                        Sound Events
+                    </h3>
+                    <p class="text-gray-600">
+                        Detect and respond to specific sounds in your environment
+                    </p>
+                </div>
+                
+                <div class="bg-white rounded-lg p-6 shadow-md">
+                    <div class="text-purple-500 text-4xl mb-4">
+                        <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">
+                        Customizable
+                    </h3>
+                    <p class="text-gray-600">
+                        Personalize your assistant's behavior and responses
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
