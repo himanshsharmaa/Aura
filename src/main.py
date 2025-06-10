@@ -19,232 +19,168 @@ from utils.logger import setup_logger
 import threading
 import queue
 import time
+import sys
+import traceback
+from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtCore import QTimer
+from ui.main_window import MainWindow
+from tasks.hotword_detector import HotwordDetector
+from tasks.alarms import AlarmSystem
+from pathlib import Path
 
 logger = setup_logger(__name__)
 
-class Aura:
+class AuraApplication:
     def __init__(self):
-        # Initialize core modules
-        self.stt = SpeechToText()
-        self.tts = TextToSpeech()
-        self.nlp = Llama2(model_path="gpt2")
-        self.hotword = HotwordDetector()
-        self.sound_detector = SoundEventDetector()
-        self.emotion_detector = EmotionDetector()
-        self.personality = Personality()
-        self.user_activity = UserActivity()
+        self.logger = setup_logger()
+        self.app = QApplication(sys.argv)
+        self.window = None
+        self.hotword_detector = None
+        self.alarm_system = None
+        self.error_count = 0
+        self.max_errors = 3
         
-        # Audio settings
-        self.CHUNK = 1024
-        self.FORMAT = pyaudio.paInt16
-        self.CHANNELS = 1
-        self.RATE = 16000
-        self.RECORD_SECONDS = 5
+        # Set up error handling
+        sys.excepthook = self.handle_exception
         
-        # Initialize PyAudio
-        self.p = pyaudio.PyAudio()
+        # Create required directories
+        self._create_directories()
         
-        # Initialize camera if available
-        self.camera = None
+        # Initialize components
+        self._initialize_components()
+    
+    def _create_directories(self):
+        """Create necessary directories"""
         try:
-            self.camera = cv2.VideoCapture(0)
-            if not self.camera.isOpened():
-                logger.warning("No camera available")
-                self.camera = None
+            directories = [
+                'models',
+                'data/training_samples/positive',
+                'data/training_samples/negative',
+                'logs',
+                'data/cache'
+            ]
+            for directory in directories:
+                Path(directory).mkdir(parents=True, exist_ok=True)
         except Exception as e:
-            logger.error(f"Error initializing camera: {e}")
-            self.camera = None
-            
-        # State tracking
-        self.previous_activity = None
-        self.is_active = True
-        self.wake_queue = queue.Queue()
-        
-    def record_audio(self):
-        """Record audio from microphone"""
+            self.logger.error(f"Error creating directories: {e}")
+            self._show_error("Directory Creation Error", str(e))
+    
+    def _initialize_components(self):
+        """Initialize application components"""
         try:
-            stream = self.p.open(format=self.FORMAT,
-                                channels=self.CHANNELS,
-                                rate=self.RATE,
-                                input=True,
-                                frames_per_buffer=self.CHUNK)
+            # Initialize hotword detector
+            self.hotword_detector = HotwordDetector()
             
-            logger.info("Recording...")
-            frames = []
+            # Initialize alarm system
+            self.alarm_system = AlarmSystem()
             
-            for _ in range(0, int(self.RATE / self.CHUNK * self.RECORD_SECONDS)):
-                data = stream.read(self.CHUNK)
-                frames.append(data)
-                
-            logger.info("Recording finished")
+            # Create main window
+            self.window = MainWindow(self.hotword_detector, self.alarm_system)
             
-            stream.stop_stream()
-            stream.close()
+            # Set up error handling for components
+            self._setup_component_error_handling()
             
-            # Save to temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-                wf = wave.open(temp_file.name, 'wb')
-                wf.setnchannels(self.CHANNELS)
-                wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
-                wf.setframerate(self.RATE)
-                wf.writeframes(b''.join(frames))
-                wf.close()
-                return temp_file.name
-                
         except Exception as e:
-            logger.error(f"Error recording audio: {e}")
-            return None
-
-    def monitor_sound_events(self):
-        """Monitor for unusual sounds in a separate thread"""
-        while self.is_active:
+            self.logger.error(f"Error initializing components: {e}")
+            self._show_error("Initialization Error", str(e))
+            sys.exit(1)
+    
+    def _setup_component_error_handling(self):
+        """Set up error handling for components"""
+        try:
+            # Set up hotword detector error handling
+            def on_hotword_error(error):
+                self.logger.error(f"Hotword detector error: {error}")
+                self._show_error("Hotword Detection Error", str(error))
+            
+            self.hotword_detector.set_error_callback(on_hotword_error)
+            
+            # Set up alarm system error handling
+            def on_alarm_error(error):
+                self.logger.error(f"Alarm system error: {error}")
+                self._show_error("Alarm System Error", str(error))
+            
+            self.alarm_system.set_error_callback(on_alarm_error)
+            
+        except Exception as e:
+            self.logger.error(f"Error setting up error handling: {e}")
+            self._show_error("Error Handler Setup Error", str(e))
+    
+    def handle_exception(self, exc_type, exc_value, exc_traceback):
+        """Handle uncaught exceptions"""
+        try:
+            error_msg = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+            self.logger.error(f"Uncaught exception: {error_msg}")
+            
+            self.error_count += 1
+            if self.error_count >= self.max_errors:
+                self._show_error("Critical Error", 
+                               "Too many errors occurred. Application will exit.")
+                sys.exit(1)
+            
+            self._show_error("Application Error", str(exc_value))
+            
+        except Exception as e:
+            self.logger.error(f"Error in exception handler: {e}")
+            sys.exit(1)
+    
+    def _show_error(self, title, message):
+        """Show error message to user"""
+        try:
+            QMessageBox.critical(self.window, title, message)
+        except Exception as e:
+            self.logger.error(f"Error showing error message: {e}")
+    
+    def run(self):
+        """Run the application"""
+        try:
+            # Show main window
+            self.window.show()
+            
+            # Start components
+            self.hotword_detector.start_listening(self.window.on_hotword_detected)
+            self.alarm_system.start()
+            
+            # Set up periodic health check
+            self._setup_health_check()
+            
+            # Run application
+            return self.app.exec()
+            
+        except Exception as e:
+            self.logger.error(f"Error running application: {e}")
+            self._show_error("Runtime Error", str(e))
+            return 1
+    
+    def _setup_health_check(self):
+        """Set up periodic health check"""
+        def health_check():
             try:
-                audio_file = self.record_audio()
-                if audio_file:
-                    event_name, score = self.sound_detector.detect(audio_file)
-                    if event_name:
-                        logger.info(f"Unusual sound detected: {event_name} (score: {score:.2f})")
-                        self.wake_queue.put(("sound", event_name))
-                    os.unlink(audio_file)
+                # Check hotword detector
+                if not self.hotword_detector.is_listening:
+                    self.logger.warning("Hotword detector stopped. Restarting...")
+                    self.hotword_detector.start_listening(self.window.on_hotword_detected)
+                
+                # Check alarm system
+                if not self.alarm_system.is_running:
+                    self.logger.warning("Alarm system stopped. Restarting...")
+                    self.alarm_system.start()
+                
             except Exception as e:
-                logger.error(f"Error in sound monitoring: {e}")
-            time.sleep(0.1)  # Small delay to prevent CPU overload
+                self.logger.error(f"Health check error: {e}")
+        
+        # Run health check every 30 seconds
+        QTimer.singleShot(30000, health_check)
 
-    def capture_frame(self):
-        """Capture a frame from the camera"""
-        if self.camera is None:
-            return None
-            
-        try:
-            ret, frame = self.camera.read()
-            if ret:
-                return frame
-            return None
-        except Exception as e:
-            logger.error(f"Error capturing frame: {e}")
-            return None
-            
-    async def process_interaction(self):
-        """Process a single interaction cycle"""
-        try:
-            # Start sound monitoring in a separate thread
-            sound_thread = threading.Thread(target=self.monitor_sound_events, daemon=True)
-            sound_thread.start()
-            
-            # Wait for either hotword or unusual sound
-            logger.info("Waiting for wake trigger...")
-            
-            while self.is_active:
-                # Check hotword
-                if self.hotword.start_listening():
-                    logger.info("Wake word detected!")
-                    break
-                
-                # Check for unusual sounds
-                try:
-                    trigger_type, event_name = self.wake_queue.get_nowait()
-                    if trigger_type == "sound":
-                        logger.info(f"Waking up due to {event_name}")
-                        break
-                except queue.Empty:
-                    pass
-                
-                await asyncio.sleep(0.1)
-            
-            # Record user input
-            audio_file = self.record_audio()
-            if not audio_file:
-                return
-                
-            # Analyze emotions
-            voice_emotion = self.emotion_detector.analyze_voice(audio_file)
-            face_emotion = None
-            
-            # Capture and analyze facial expression if camera is available
-            frame = self.capture_frame()
-            if frame is not None:
-                face_emotion = self.emotion_detector.analyze_face(frame=frame)
-                
-            # Combine emotion analysis
-            emotion = self.emotion_detector.combine_emotions(voice_emotion, face_emotion)
-            
-            # Analyze user activity
-            audio_data = np.frombuffer(open(audio_file, 'rb').read(), dtype=np.int16)
-            current_activity = self.user_activity.classify_sound(audio_data)
-            
-            # Check for activity changes
-            activity_change = self.user_activity.detect_activity_change(
-                current_activity,
-                self.previous_activity
-            )
-            self.previous_activity = current_activity
-            
-            # Check for proactive actions
-            if activity_change:
-                proactive_action = self.user_activity.should_act_proactively(
-                    activity_change,
-                    self.personality.get_preference('notifications', 'all')
-                )
-                if proactive_action:
-                    await self.tts.speak(proactive_action['message'])
-                    
-            # Transcribe audio
-            user_input = self.stt.transcribe(audio_file)
-            logger.info(f"User said: {user_input}")
-            
-            # Clean up temporary audio file
-            os.unlink(audio_file)
-            
-            if not user_input:
-                logger.warning("No speech detected")
-                return
-                
-            # Get recent interactions for context
-            recent_interactions = self.personality.get_recent_interactions(limit=5)
-            context = "\n".join([
-                f"User: {i['user_input']}\nAura: {i['aura_response']}"
-                for i in recent_interactions
-            ])
-
-    # Generate response
-            response = self.nlp.generate_response(user_input)
-            logger.info(f"Aura's Response: {response}")
-            
-            # Store interaction
-            self.personality.store_interaction(
-                user_input,
-                response,
-                emotion=emotion['emotion'] if emotion else None,
-                context=context
-            )
-
-    # Speak the response
-            await self.tts.speak(response)
-            
-        except Exception as e:
-            logger.error(f"Error in interaction cycle: {e}")
-            
-    async def run(self):
-        """Main loop for Aura"""
-        logger.info("Starting Aura...")
-        try:
-            while self.is_active:
-                await self.process_interaction()
-        except KeyboardInterrupt:
-            logger.info("Shutting down Aura...")
-        finally:
-            self.is_active = False
-            if self.camera is not None:
-                self.camera.release()
-            self.p.terminate()
-            
-    def shutdown(self):
-        """Gracefully shutdown Aura"""
-        self.is_active = False
-
-async def main():
-    aura = Aura()
-    await aura.run()
+def main():
+    """Main entry point"""
+    try:
+        app = AuraApplication()
+        sys.exit(app.run())
+    except Exception as e:
+        logger = setup_logger()
+        logger.error(f"Fatal error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

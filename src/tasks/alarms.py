@@ -20,6 +20,7 @@ import queue
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from tasks.hotword_detector import HotwordDetector
 
 logger = setup_logger(__name__)
 
@@ -284,6 +285,7 @@ class AlarmSystem:
         self.audio_queue = []
         self.last_event_time = {}
         self.event_callbacks = {}
+        self.hotword_detector = HotwordDetector(config_path)
         
     def _load_config(self, config_path):
         """Load configuration from JSON file"""
@@ -384,6 +386,9 @@ class AlarmSystem:
             self.logger.error("Failed to load sound event model")
             return
         
+        # Start hotword detection
+        self.hotword_detector.start_listening(self._on_hotword_detected)
+        
         # Start audio stream
         self.stream = sd.InputStream(
             channels=1,
@@ -406,6 +411,9 @@ class AlarmSystem:
         self.logger.info("Stopping alarm system...")
         self.is_running = False
         
+        # Stop hotword detection
+        self.hotword_detector.stop_listening()
+        
         if hasattr(self, 'stream'):
             self.stream.stop()
             self.stream.close()
@@ -414,6 +422,11 @@ class AlarmSystem:
             self.process_thread.join()
         
         self.logger.info("Alarm system stopped")
+    
+    def _on_hotword_detected(self):
+        """Callback for hotword detection"""
+        self.logger.info("Hotword detected!")
+        # Add your hotword detection handling here
     
     def register_event_callback(self, event_name, callback):
         """Register a callback for a specific sound event"""
@@ -439,3 +452,9 @@ class AlarmSystem:
                     })
         
         return sorted(history, key=lambda x: x['timestamp'], reverse=True)
+
+detector = HotwordDetector()
+detector.start_listening(lambda: print("Hotword detected!"))
+
+alarm = AlarmSystem()
+alarm.start()
