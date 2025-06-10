@@ -1,10 +1,18 @@
 import os
+import sys
 import json
 from datetime import datetime
+from pathlib import Path
+
+# Add src directory to Python path
+src_dir = str(Path(__file__).parent.parent.parent)
+if src_dir not in sys.path:
+    sys.path.append(src_dir)
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
-from auth.auth_service import AuthService
-from auth.user_manager import UserManager
-from training.training_manager import TrainingManager
+from src.auth.auth_service import AuthService
+from src.auth.user_manager import UserManager
+from src.training.training_manager import TrainingManager
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
