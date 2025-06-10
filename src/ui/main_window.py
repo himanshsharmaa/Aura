@@ -4,7 +4,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 import json
 import numpy as np
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
-                            QHBoxLayout, QLabel, QPushButton, QFrame, QSplitter)
+                            QHBoxLayout, QLabel, QPushButton, QFrame, QSplitter,
+                            QComboBox, QProgressBar, QMessageBox, QFileDialog)
 from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize
 from PyQt6.QtGui import (QPainter, QColor, QPen, QPainterPath, QFont, 
                         QBrush, QLinearGradient, QRadialGradient)
@@ -154,10 +155,12 @@ class StatusWidget(QWidget):
             self.event_label.setText("")
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, hotword_detector, alarm_system):
         super().__init__()
-        self.setWindowTitle("Aura AI")
-        self.setMinimumSize(800, 600)
+        self.logger = setup_logger(__name__)
+        self.hotword_detector = hotword_detector
+        self.alarm_system = alarm_system
+        self.init_ui()
         
         # Initialize core modules
         self.emotion_detector = EmotionDetector()
@@ -175,126 +178,163 @@ class MainWindow(QMainWindow):
         self.sync_timer.timeout.connect(self.sync_data)
         self.sync_timer.start(300000)  # Sync every 5 minutes
         
-        # Initialize UI
-        self.init_ui()
-        
         # Start cloud sync
         asyncio.create_task(self.cloud_sync.initialize())
         
-    async def sync_data(self):
-        """Sync user data to cloud"""
-        if not hasattr(self, 'user_id'):
-            return
-            
-        # Sync user data
-        user_data = {
-            'preferences': self.personality.get_preferences(),
-            'personality_traits': self.personality.get_traits(),
-            'emotional_state': self.emotion_detector.get_current_state()
-        }
-        await self.cloud_sync.sync_user_data(self.user_id, user_data)
-        
-        # Sync memories
-        memories = self.personality.get_memories()
-        for memory in memories:
-            await self.cloud_sync.sync_memory(self.user_id, memory)
-            
-        # Sync preferences
-        preferences = self.personality.get_preferences()
-        await self.cloud_sync.sync_preferences(self.user_id, preferences)
-        
-    async def load_user_data(self, user_id: str):
-        """Load user data from cloud"""
-        self.user_id = user_id
-        
-        # Get user data
-        user_data = await self.cloud_sync.get_user_data(user_id)
-        if user_data:
-            # Update personality
-            if 'preferences' in user_data:
-                self.personality.set_preferences(user_data['preferences'])
-            if 'personality_traits' in user_data:
-                self.personality.set_traits(user_data['personality_traits'])
-                
-        # Get memories
-        memories = await self.cloud_sync.get_memories(user_id)
-        if memories:
-            for memory in memories:
-                self.personality.add_memory(memory)
-                
-        # Get preferences
-        preferences = await self.cloud_sync.get_preferences(user_id)
-        if preferences:
-            self.personality.set_preferences(preferences)
-            
     def init_ui(self):
-        # Create central widget and layout
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        layout = QHBoxLayout(central_widget)
-        
-        # Create left panel for avatar
-        left_panel = QWidget()
-        left_layout = QVBoxLayout(left_panel)
-        self.avatar = Avatar()
-        left_layout.addWidget(self.avatar)
-        
-        # Create right panel for emotion visualization
-        right_panel = QWidget()
-        right_layout = QVBoxLayout(right_panel)
-        self.emotion_visualizer = EmotionVisualizer()
-        right_layout.addWidget(self.emotion_visualizer)
-        
-        # Add panels to main layout
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.addWidget(left_panel)
-        splitter.addWidget(right_panel)
-        splitter.setSizes([400, 400])
-        layout.addWidget(splitter)
-        
-    def update_emotions(self):
-        """Update emotions based on current state"""
+        """Initialize the user interface"""
         try:
-            # Get current emotions from detector
-            emotions = self.emotion_detector.get_current_emotions()
+            self.setWindowTitle('Aura - Voice Assistant')
+            self.setGeometry(100, 100, 800, 600)
             
-            # Update avatar
-            if emotions:
-                dominant_emotion = max(emotions.items(), key=lambda x: x[1])[0]
-                self.avatar.set_emotion(dominant_emotion)
+            # Create central widget and layout
+            central_widget = QWidget()
+            self.setCentralWidget(central_widget)
+            layout = QVBoxLayout(central_widget)
             
-            # Update emotion visualizer
-            self.emotion_visualizer.update_emotions(emotions)
+            # Status section
+            status_layout = QHBoxLayout()
+            self.status_label = QLabel('Status: Ready')
+            self.status_label.setFont(QFont('Arial', 12))
+            status_layout.addWidget(self.status_label)
+            layout.addLayout(status_layout)
+            
+            # Confidence visualization
+            self.confidence_bar = QProgressBar()
+            self.confidence_bar.setRange(0, 100)
+            self.confidence_bar.setValue(0)
+            layout.addWidget(self.confidence_bar)
+            
+            # Control buttons
+            button_layout = QHBoxLayout()
+            
+            self.start_button = QPushButton('Start Listening')
+            self.start_button.clicked.connect(self.start_listening)
+            button_layout.addWidget(self.start_button)
+            
+            self.stop_button = QPushButton('Stop Listening')
+            self.stop_button.clicked.connect(self.stop_listening)
+            self.stop_button.setEnabled(False)
+            button_layout.addWidget(self.stop_button)
+            
+            layout.addLayout(button_layout)
+            
+            # Training section
+            training_layout = QHBoxLayout()
+            
+            self.collect_positive_button = QPushButton('Collect Positive Samples')
+            self.collect_positive_button.clicked.connect(
+                lambda: self.start_collecting_samples('positive')
+            )
+            training_layout.addWidget(self.collect_positive_button)
+            
+            self.collect_negative_button = QPushButton('Collect Negative Samples')
+            self.collect_negative_button.clicked.connect(
+                lambda: self.start_collecting_samples('negative')
+            )
+            training_layout.addWidget(self.collect_negative_button)
+            
+            self.train_button = QPushButton('Train Model')
+            self.train_button.clicked.connect(self.train_model)
+            training_layout.addWidget(self.train_button)
+            
+            layout.addLayout(training_layout)
+            
+            # Set up visualization callback
+            self.hotword_detector.set_visualization_callback(self.update_confidence)
+            
+            self.logger.info("UI initialized successfully")
             
         except Exception as e:
-            logger.error(f"Error updating emotions: {e}")
-            
-    def update_status(self, status, event=None):
-        """Update UI status and trigger appropriate animations"""
-        # Update avatar emotion based on status
-        if "error" in status.lower():
-            self.avatar.set_emotion("sad")
-        elif "detected" in status.lower():
-            self.avatar.set_emotion("happy")
-        elif "responding" in status.lower():
-            self.avatar.set_emotion("thinking")
-        else:
-            self.avatar.set_emotion("neutral")
-            
+            self.logger.error(f"Error initializing UI: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to initialize UI: {e}")
+    
+    def start_listening(self):
+        """Start listening for hotword"""
+        try:
+            self.hotword_detector.start_listening(self.on_hotword_detected)
+            self.start_button.setEnabled(False)
+            self.stop_button.setEnabled(True)
+            self.status_label.setText('Status: Listening...')
+            self.logger.info("Started listening")
+        except Exception as e:
+            self.logger.error(f"Error starting listener: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to start listening: {e}")
+    
+    def stop_listening(self):
+        """Stop listening for hotword"""
+        try:
+            self.hotword_detector.stop_listening()
+            self.start_button.setEnabled(True)
+            self.stop_button.setEnabled(False)
+            self.status_label.setText('Status: Ready')
+            self.logger.info("Stopped listening")
+        except Exception as e:
+            self.logger.error(f"Error stopping listener: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to stop listening: {e}")
+    
+    def on_hotword_detected(self):
+        """Callback for hotword detection"""
+        try:
+            self.status_label.setText('Status: Hotword Detected!')
+            QTimer.singleShot(2000, lambda: self.status_label.setText('Status: Listening...'))
+            self.logger.info("Hotword detected")
+        except Exception as e:
+            self.logger.error(f"Error in hotword detection callback: {e}")
+    
+    def update_confidence(self, confidence, history):
+        """Update confidence visualization"""
+        try:
+            self.confidence_bar.setValue(int(confidence * 100))
+        except Exception as e:
+            self.logger.error(f"Error updating confidence: {e}")
+    
+    def start_collecting_samples(self, sample_type):
+        """Start collecting training samples"""
+        try:
+            if self.hotword_detector.start_collecting_samples(sample_type):
+                self.status_label.setText(f'Status: Collecting {sample_type} samples...')
+                self.logger.info(f"Started collecting {sample_type} samples")
+        except Exception as e:
+            self.logger.error(f"Error starting sample collection: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to start sample collection: {e}")
+    
+    def train_model(self):
+        """Train the hotword detection model"""
+        try:
+            self.status_label.setText('Status: Training model...')
+            if self.hotword_detector.train_model([], []):  # Add your samples here
+                self.status_label.setText('Status: Model trained successfully')
+                self.logger.info("Model training completed")
+            else:
+                self.status_label.setText('Status: Model training failed')
+                self.logger.error("Model training failed")
+        except Exception as e:
+            self.logger.error(f"Error training model: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to train model: {e}")
+    
     def closeEvent(self, event):
         """Handle window close event"""
-        # Stop sync timer
-        self.sync_timer.stop()
-        
-        # Close cloud sync
-        asyncio.create_task(self.cloud_sync.close())
-        
-        # Clean up other resources
-        self.emotion_detector.stop()
-        self.speech_to_text.stop()
-        self.text_to_speech.stop()
-        
-        event.accept()
+        try:
+            self.hotword_detector.stop_listening()
+            self.alarm_system.stop()
+            self.logger.info("Application closed")
+            
+            # Stop sync timer
+            self.sync_timer.stop()
+            
+            # Close cloud sync
+            asyncio.create_task(self.cloud_sync.close())
+            
+            # Clean up other resources
+            self.emotion_detector.stop()
+            self.speech_to_text.stop()
+            self.text_to_speech.stop()
+            
+            event.accept()
+        except Exception as e:
+            self.logger.error(f"Error closing application: {e}")
+            event.accept()
 
 def run_ui():
     app = QApplication(sys.argv)

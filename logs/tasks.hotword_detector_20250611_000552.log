@@ -1,0 +1,52 @@
+2025-06-11 00:05:52,745 - tasks.hotword_detector - ERROR - Error loading model: 'model'
+2025-06-11 00:05:52,746 - tasks.hotword_detector - INFO - Starting hotword detection...
+2025-06-11 00:05:52,810 - tasks.hotword_detector - INFO - Hotword detection started
+2025-06-11 00:05:52,911 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,018 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,128 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,237 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,344 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,453 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,562 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,670 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,779 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,887 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:53,999 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,107 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,217 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,325 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,436 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,545 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,655 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,765 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,875 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:54,985 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,094 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,204 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,314 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,423 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,533 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,643 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,751 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,860 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:55,970 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,080 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,189 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,300 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,408 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,518 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,627 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,735 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,845 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:56,953 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,062 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,169 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,279 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,387 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,498 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,607 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,717 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,825 - tasks.hotword_detector - INFO - Stopping hotword detection...
+2025-06-11 00:05:57,825 - tasks.hotword_detector - ERROR - Error processing audio: 'NoneType' object is not callable
+2025-06-11 00:05:57,934 - tasks.hotword_detector - INFO - Hotword detection stopped
+2025-06-11 00:05:57,941 - tasks.hotword_detector - ERROR - Error loading model: 'model'

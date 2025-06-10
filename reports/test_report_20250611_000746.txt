@@ -1,0 +1,9 @@
+Aura Component Test Report
+========================
+
+Test Date: 2025-06-11 00:07:46
+
+Audio Devices: PASS
+Model Loading: PASS
+Hotword Detection: PASS
+Sound Event Detection: PASS

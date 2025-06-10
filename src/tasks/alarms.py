@@ -278,23 +278,43 @@ class HotwordDetector:
 
 class AlarmSystem:
     def __init__(self, config_path='config.json'):
-        self.logger = setup_logger()
+        self.logger = setup_logger(__name__)
         self.config = self._load_config(config_path)
         self.is_running = False
         self.sound_event_model = None
         self.audio_queue = []
         self.last_event_time = {}
         self.event_callbacks = {}
-        self.hotword_detector = HotwordDetector(config_path)
+        self.hotword_detector = None  # Initialize in start() method
         
     def _load_config(self, config_path):
         """Load configuration from JSON file"""
         try:
             with open(config_path, 'r') as f:
-                return json.load(f)
+                config = json.load(f)
+                # Ensure required config sections exist
+                if 'sound_event_detection' not in config:
+                    config['sound_event_detection'] = {
+                        'model': 'models/yamnet',
+                        'sample_rate': 16000,
+                        'threshold': 0.5,
+                        'min_duration': 1.0
+                    }
+                if 'sound_events' not in config:
+                    config['sound_events'] = []
+                return config
         except Exception as e:
             self.logger.error(f"Error loading config: {e}")
-            return {}
+            # Return default config if file not found
+            return {
+                'sound_event_detection': {
+                    'model': 'models/yamnet',
+                    'sample_rate': 16000,
+                    'threshold': 0.5,
+                    'min_duration': 1.0
+                },
+                'sound_events': []
+            }
     
     def _load_sound_event_model(self):
         """Load YAMNet model for sound event detection"""
@@ -302,11 +322,19 @@ class AlarmSystem:
             model_path = self.config['sound_event_detection']['model']
             if not os.path.exists(model_path):
                 self.logger.info("Downloading YAMNet model...")
+                # Load model directly from TF Hub
                 model = hub.load('https://tfhub.dev/google/yamnet/1')
-                os.makedirs(os.path.dirname(model_path), exist_ok=True)
-                model.save(model_path)
+                self.logger.info("Model downloaded successfully")
             else:
-                model = tf.saved_model.load(model_path)
+                # Load from local path
+                model = hub.load(model_path)
+                self.logger.info("Model loaded from local path")
+            
+            # Test model with dummy input to ensure it works
+            dummy_input = np.zeros((16000,), dtype=np.float32)
+            _ = model(dummy_input)
+            self.logger.info("Model test successful")
+            
             return model
         except Exception as e:
             self.logger.error(f"Error loading sound event model: {e}")
@@ -319,7 +347,7 @@ class AlarmSystem:
         self.audio_queue.append(indata.copy())
         
         # Keep only last 3 seconds of audio
-        max_samples = int(3 * self.config['hotword_detection']['sample_rate'])
+        max_samples = int(3 * self.config['sound_event_detection']['sample_rate'])
         if len(self.audio_queue) * frames > max_samples:
             self.audio_queue.pop(0)
     
@@ -327,7 +355,7 @@ class AlarmSystem:
         """Process audio for sound event detection"""
         while self.is_running:
             try:
-                if not self.audio_queue:
+                if not self.audio_queue or not self.sound_event_model:
                     time.sleep(0.1)
                     continue
                 
@@ -340,10 +368,10 @@ class AlarmSystem:
                     audio_data = audio_data.mean(axis=1)
                 
                 # Resample if needed
-                if self.config['hotword_detection']['sample_rate'] != 16000:
+                if self.config['sound_event_detection']['sample_rate'] != 16000:
                     audio_data = librosa.resample(
                         audio_data,
-                        orig_sr=self.config['hotword_detection']['sample_rate'],
+                        orig_sr=self.config['sound_event_detection']['sample_rate'],
                         target_sr=16000
                     )
                 
@@ -380,6 +408,10 @@ class AlarmSystem:
         self.logger.info("Starting alarm system...")
         self.is_running = True
         
+        # Initialize hotword detector
+        from tasks.hotword_detector import HotwordDetector
+        self.hotword_detector = HotwordDetector()
+        
         # Load sound event model
         self.sound_event_model = self._load_sound_event_model()
         if not self.sound_event_model:
@@ -392,7 +424,7 @@ class AlarmSystem:
         # Start audio stream
         self.stream = sd.InputStream(
             channels=1,
-            samplerate=self.config['hotword_detection']['sample_rate'],
+            samplerate=self.config['sound_event_detection']['sample_rate'],
             callback=self._audio_callback
         )
         self.stream.start()
@@ -412,7 +444,8 @@ class AlarmSystem:
         self.is_running = False
         
         # Stop hotword detection
-        self.hotword_detector.stop_listening()
+        if self.hotword_detector:
+            self.hotword_detector.stop_listening()
         
         if hasattr(self, 'stream'):
             self.stream.stop()
@@ -452,9 +485,3 @@ class AlarmSystem:
                     })
         
         return sorted(history, key=lambda x: x['timestamp'], reverse=True)
-
-detector = HotwordDetector()
-detector.start_listening(lambda: print("Hotword detected!"))
-
-alarm = AlarmSystem()
-alarm.start()

@@ -1,0 +1,30 @@
+2025-06-11 00:05:00,833 - __main__ - INFO - Starting component tests...
+2025-06-11 00:05:00,835 - __main__ - INFO - Testing audio devices...
+2025-06-11 00:05:00,835 - __main__ - INFO - Found 14 input devices:
+2025-06-11 00:05:00,835 - __main__ - INFO - - Microsoft Sound Mapper - Input
+2025-06-11 00:05:00,836 - __main__ - INFO - - Microphone (3- High Definition 
+2025-06-11 00:05:00,836 - __main__ - INFO - - Virtual Mic (Virtual Mic for Au
+2025-06-11 00:05:00,836 - __main__ - INFO - - Microphone (Camo)
+2025-06-11 00:05:00,836 - __main__ - INFO - - Primary Sound Capture Driver
+2025-06-11 00:05:00,837 - __main__ - INFO - - Microphone (3- High Definition Audio Device)
+2025-06-11 00:05:00,837 - __main__ - INFO - - Virtual Mic (Virtual Mic for AudioRelay)
+2025-06-11 00:05:00,837 - __main__ - INFO - - Microphone (Camo)
+2025-06-11 00:05:00,838 - __main__ - INFO - - Virtual Mic (Virtual Mic for AudioRelay)
+2025-06-11 00:05:00,838 - __main__ - INFO - - Microphone (Camo)
+2025-06-11 00:05:00,838 - __main__ - INFO - - Microphone (3- High Definition Audio Device)
+2025-06-11 00:05:00,838 - __main__ - INFO - - Microphone (HD Audio Mixed capture)
+2025-06-11 00:05:00,838 - __main__ - INFO - - Microphone (Camo)
+2025-06-11 00:05:00,839 - __main__ - INFO - - Virtual Mic (AudioRelay Wave)
+2025-06-11 00:05:00,839 - __main__ - INFO - Testing model loading...
+2025-06-11 00:05:52,736 - __main__ - INFO - Successfully loaded YAMNet model
+2025-06-11 00:05:52,743 - __main__ - INFO - Testing hotword detection...
+2025-06-11 00:05:57,935 - __main__ - INFO - Hotword detection test completed
+2025-06-11 00:05:57,936 - __main__ - INFO - Testing sound event detection...
+2025-06-11 00:06:05,807 - __main__ - INFO - Sound event detection test completed
+2025-06-11 00:06:05,808 - __main__ - INFO - Test report created: reports\test_report_20250611_000605.txt
+2025-06-11 00:06:05,809 - __main__ - INFO - 
+Test Results:
+2025-06-11 00:06:05,809 - __main__ - INFO - Audio Devices: PASS
+2025-06-11 00:06:05,810 - __main__ - INFO - Model Loading: PASS
+2025-06-11 00:06:05,810 - __main__ - INFO - Hotword Detection: PASS
+2025-06-11 00:06:05,810 - __main__ - INFO - Sound Event Detection: PASS

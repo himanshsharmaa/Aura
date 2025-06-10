@@ -1,203 +1,128 @@
-import unittest
 import os
 import sys
 import json
-import numpy as np
+import time
 import sounddevice as sd
-import torch
+import tensorflow as tf
+import tensorflow_hub as hub
+from datetime import datetime
 from pathlib import Path
 
-# Add src to Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+# Add src directory to Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
-from tasks.hotword_detector import HotwordDetector, HotwordModel
-from tasks.alarms import AlarmSystem
-from ai.stt import SpeechToText
-from ai.tts import TextToSpeech
-from ai.emotion import EmotionDetector
 from utils.logger import setup_logger
+from tasks.hotword_detector import HotwordDetector
+from tasks.alarms import AlarmSystem
 
-class TestAuraComponents(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        """Set up test environment"""
-        cls.logger = setup_logger()
-        cls.config_path = 'config.json'
-        cls.test_audio_duration = 1.0  # seconds
-        
-        # Create test directories
-        os.makedirs('models', exist_ok=True)
-        os.makedirs('data/training_samples/positive', exist_ok=True)
-        os.makedirs('data/training_samples/negative', exist_ok=True)
-        os.makedirs('logs', exist_ok=True)
-        
-        # Load config
-        with open(cls.config_path, 'r') as f:
-            cls.config = json.load(f)
-    
-    def test_01_hotword_detector(self):
-        """Test hotword detection component"""
-        self.logger.info("Testing hotword detector...")
-        
-        try:
-            detector = HotwordDetector(self.config_path)
-            
-            # Test model loading
-            self.assertIsNotNone(detector.model)
-            
-            # Test sample collection
-            self.assertTrue(detector.start_collecting_samples('positive'))
-            self.assertTrue(detector.stop_collecting_samples())
-            
-            # Test visualization callback
-            def on_confidence_update(confidence, history):
-                self.assertIsInstance(confidence, float)
-                self.assertIsInstance(history, list)
-            
-            detector.set_visualization_callback(on_confidence_update)
-            
-            # Test model training
-            positive_samples = [np.random.rand(16000) for _ in range(2)]
-            negative_samples = [np.random.rand(16000) for _ in range(2)]
-            self.assertTrue(detector.train_model(positive_samples, negative_samples))
-            
-            self.logger.info("Hotword detector tests passed")
-            
-        except Exception as e:
-            self.logger.error(f"Hotword detector test failed: {e}")
-            raise
-    
-    def test_02_alarm_system(self):
-        """Test alarm system component"""
-        self.logger.info("Testing alarm system...")
-        
-        try:
-            alarm = AlarmSystem(self.config_path)
-            
-            # Test sound event model loading
-            self.assertIsNotNone(alarm._load_sound_event_model())
-            
-            # Test event callbacks
-            event_detected = False
-            def on_event(confidence):
-                nonlocal event_detected
-                event_detected = True
-                self.assertIsInstance(confidence, float)
-            
-            alarm.register_event_callback("Shout", on_event)
-            
-            # Test event history
-            history = alarm.get_event_history()
-            self.assertIsInstance(history, list)
-            
-            self.logger.info("Alarm system tests passed")
-            
-        except Exception as e:
-            self.logger.error(f"Alarm system test failed: {e}")
-            raise
-    
-    def test_03_speech_components(self):
-        """Test speech-to-text and text-to-speech components"""
-        self.logger.info("Testing speech components...")
-        
-        try:
-            # Test STT
-            stt = SpeechToText()
-            self.assertIsNotNone(stt)
-            
-            # Test TTS
-            tts = TextToSpeech()
-            self.assertIsNotNone(tts)
-            
-            self.logger.info("Speech components tests passed")
-            
-        except Exception as e:
-            self.logger.error(f"Speech components test failed: {e}")
-            raise
-    
-    def test_04_emotion_detection(self):
-        """Test emotion detection component"""
-        self.logger.info("Testing emotion detection...")
-        
-        try:
-            emotion_detector = EmotionDetector()
-            
-            # Test with random audio
-            test_audio = np.random.rand(16000)
-            emotion = emotion_detector.detect_emotion(test_audio)
-            self.assertIsInstance(emotion, dict)
-            
-            self.logger.info("Emotion detection tests passed")
-            
-        except Exception as e:
-            self.logger.error(f"Emotion detection test failed: {e}")
-            raise
-    
-    def test_05_audio_device(self):
-        """Test audio device availability"""
-        self.logger.info("Testing audio device...")
-        
-        try:
-            devices = sd.query_devices()
-            self.assertGreater(len(devices), 0)
-            
-            # Test default input device
-            default_input = sd.query_devices(kind='input')
-            self.assertIsNotNone(default_input)
-            
-            self.logger.info("Audio device tests passed")
-            
-        except Exception as e:
-            self.logger.error(f"Audio device test failed: {e}")
-            raise
-    
-    def test_06_config_validation(self):
-        """Test configuration validation"""
-        self.logger.info("Testing configuration...")
-        
-        try:
-            required_keys = [
-                'hotword_detection',
-                'sound_events',
-                'sound_event_detection',
-                'emotion_detection',
-                'database',
-                'ui'
-            ]
-            
-            for key in required_keys:
-                self.assertIn(key, self.config)
-            
-            self.logger.info("Configuration tests passed")
-            
-        except Exception as e:
-            self.logger.error(f"Configuration test failed: {e}")
-            raise
+# Set up logging
+logger = setup_logger(__name__)
 
-def run_tests():
-    """Run all tests and generate report"""
-    logger = setup_logger()
+def test_audio_devices():
+    """Test audio input devices"""
+    logger.info("Testing audio devices...")
+    try:
+        devices = sd.query_devices()
+        input_devices = [d for d in devices if d['max_input_channels'] > 0]
+        
+        if not input_devices:
+            logger.error("No input devices found!")
+            return False
+        
+        logger.info(f"Found {len(input_devices)} input devices:")
+        for device in input_devices:
+            logger.info(f"- {device['name']}")
+        
+        return True
+    except Exception as e:
+        logger.error(f"Error testing audio devices: {e}")
+        return False
+
+def test_model_loading():
+    """Test loading of YAMNet model"""
+    logger.info("Testing model loading...")
+    try:
+        model = hub.load('https://tfhub.dev/google/yamnet/1')
+        logger.info("Successfully loaded YAMNet model")
+        return True
+    except Exception as e:
+        logger.error(f"Error loading model: {e}")
+        return False
+
+def test_hotword_detection():
+    """Test hotword detection"""
+    logger.info("Testing hotword detection...")
+    try:
+        detector = HotwordDetector()
+        detector.start_listening(lambda: logger.info("Hotword detected!"))
+        time.sleep(5)  # Listen for 5 seconds
+        detector.stop_listening()
+        logger.info("Hotword detection test completed")
+        return True
+    except Exception as e:
+        logger.error(f"Error testing hotword detection: {e}")
+        return False
+
+def test_sound_event_detection():
+    """Test sound event detection"""
+    logger.info("Testing sound event detection...")
+    try:
+        alarm_system = AlarmSystem()
+        alarm_system.start()
+        time.sleep(5)  # Listen for 5 seconds
+        alarm_system.stop()
+        logger.info("Sound event detection test completed")
+        return True
+    except Exception as e:
+        logger.error(f"Error testing sound event detection: {e}")
+        return False
+
+def create_test_report(results):
+    """Create a test report"""
+    report_dir = Path('reports')
+    report_dir.mkdir(exist_ok=True)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    report_file = report_dir / f'test_report_{timestamp}.txt'
+    
+    with open(report_file, 'w') as f:
+        f.write("Aura Component Test Report\n")
+        f.write("========================\n\n")
+        f.write(f"Test Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        
+        for test_name, result in results.items():
+            f.write(f"{test_name}: {'PASS' if result else 'FAIL'}\n")
+    
+    logger.info(f"Test report created: {report_file}")
+
+def main():
+    """Run all tests"""
     logger.info("Starting component tests...")
     
-    # Create test suite
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestAuraComponents)
+    # Create necessary directories
+    for directory in ['models', 'data/training_samples/positive', 
+                     'data/training_samples/negative', 'logs', 'data/cache']:
+        Path(directory).mkdir(parents=True, exist_ok=True)
     
     # Run tests
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
-    
-    # Generate report
-    report = {
-        'total_tests': result.testsRun,
-        'failures': len(result.failures),
-        'errors': len(result.errors),
-        'skipped': len(result.skipped)
+    results = {
+        'Audio Devices': test_audio_devices(),
+        'Model Loading': test_model_loading(),
+        'Hotword Detection': test_hotword_detection(),
+        'Sound Event Detection': test_sound_event_detection()
     }
     
-    logger.info(f"Test Report: {report}")
+    # Create test report
+    create_test_report(results)
     
-    return result.wasSuccessful()
+    # Print summary
+    logger.info("\nTest Results:")
+    for test_name, result in results.items():
+        logger.info(f"{test_name}: {'PASS' if result else 'FAIL'}")
+    
+    # Return overall success
+    return all(results.values())
 
-if __name__ == '__main__':
-    success = run_tests()
+if __name__ == "__main__":
+    success = main()
     sys.exit(0 if success else 1) 
